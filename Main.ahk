@@ -97,15 +97,15 @@ if !FileGetSHA1(tmpFile, newFileSHA) {
 if (currentSHA = newFileSHA) {
     FileDelete, %tmpFile%
     Gosub, ShowGui ; no update needed
+} else {
+    ; replace local file, restart ahk file
+    FileDelete, %localFile%
+    FileMove, %tmpFile%, %localFile%, 1
+
+    MsgBox, 64, Update, A new version was downloaded. The script will now restart to apply the update.
+    Run, %A_AhkPath% "%A_ScriptFullPath%"
+    ExitApp
 }
-
-; replace local file, restart ahk file
-FileDelete, %localFile%
-FileMove, %tmpFile%, %localFile%, 1
-
-MsgBox, 64, Update, A new version was downloaded. The script will now restart to apply the update.
-Run, %A_AhkPath% "%A_ScriptFullPath%"
-ExitApp
 
 
 httpGet(url) {
