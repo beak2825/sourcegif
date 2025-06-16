@@ -158,8 +158,9 @@ DownloadFileWithStatus(url, savePath, ByRef statusCode, ByRef responseText) {
         statusCode := http.Status
         responseText := http.ResponseText
         if (statusCode = 200) {
-            FileDelete, %savePath%
-            FileAppend, %responseText%, %savePath%
+            if FileExist(savePath)
+				FileDelete, %savePath%
+			FileAppend, %responseText%, %savePath%
             return true
         }
     } catch e {
