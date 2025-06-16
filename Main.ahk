@@ -2224,7 +2224,7 @@ SaveSettings:
 
     Gui, Submit, NoHide
 
-    ; — now write them out —
+    ; - now write them out -
     Loop, % eggItems.Length()
         IniWrite, % (eggItem%A_Index% ? 1 : 0), %settingsFile%, Egg, Item%A_Index%
 
