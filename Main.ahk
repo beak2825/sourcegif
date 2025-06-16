@@ -55,20 +55,19 @@ global localFile := "Main.ahk"
 global githubCommitAPI := "https://api.github.com/repos/" . UserRepoName . "/commits?path=" . localFile
 global rawBaseURL := "https://raw.githubusercontent.com/" . UserRepoName
 
-; Get local file hash (SHA-1)
+; get local file hash (SHA-1)
 if !FileGetSHA1(localFile, currentSHA) {
     MsgBox, 16, Error, Failed to compute current file hash.
     ExitApp
 }
 
-; Get GitHub commits
+; get github commits from api (non-caching)
 json := httpGet(githubCommitAPI)
 if !json {
     MsgBox, 16, Error, Failed to query GitHub commit info.
     ExitApp
 }
 
-; Extract latest commit SHA
 RegExMatch(json, """sha"":\s*""([0-9a-f]{40})""", m)
 if !m1 {
     MsgBox, 16, Error, Could not extract commit SHA from API response.
@@ -77,7 +76,7 @@ if !m1 {
 latestCommitSHA := m1
 newRawURL := rawBaseURL . "/" . latestCommitSHA . "/" . localFile
 
-; Download new file to temp location
+; download latest to temp
 tmpFile := A_Temp "\new_" . localFile
 statusCode := ""
 response := ""
@@ -87,7 +86,7 @@ if !DownloadFileWithStatus(newRawURL, tmpFile, statusCode, response) {
     ExitApp
 }
 
-; Compute downloaded file hash
+; get DOWNLOADED file hash
 if !FileGetSHA1(tmpFile, newFileSHA) {
     MsgBox, 16, Error, Failed to compute SHA1 of downloaded file.
     FileDelete, %tmpFile%
@@ -100,7 +99,7 @@ if (currentSHA = newFileSHA) {
     return  ; No update needed
 }
 
-; Overwrite local file and restart
+; replace local file, restart ahk file
 FileDelete, %localFile%
 FileMove, %tmpFile%, %localFile%, 1
 
@@ -108,7 +107,6 @@ MsgBox, 64, Update, A new version was downloaded. The script will now restart to
 Run, %A_AhkPath% "%A_ScriptFullPath%"
 ExitApp
 
-; --- Functions ---
 
 httpGet(url) {
     http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
