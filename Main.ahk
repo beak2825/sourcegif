@@ -83,22 +83,25 @@ newRawURL := rawBaseURL . "/main/" . latestCommitSHA . "/" . localFile
 tmpFile := A_Temp "\new_" . localFile
 statusCode := ""
 response := ""
+
 if !DownloadFileWithStatus(newRawURL, tmpFile, statusCode, response) {
-    errorLog := A_Temp "\error.txt"
-    FileDelete, %errorLog%
+    errorLog := A_ScriptDir "\error.txt"
+    time := A_Now
+    formattedTime := SubStr(time, 1, 4) "-" SubStr(time, 5, 2) "-" SubStr(time, 7, 2) " " SubStr(time, 9, 2) ":" SubStr(time, 11, 2) ":" SubStr(time, 13, 2)
+
     FileAppend,
     (
-Failed to download latest file.
+[%formattedTime%] Failed to download latest file.
 URL: %newRawURL%
 Status: %statusCode%
 Response: %response%
+
     ), %errorLog%
     
     MsgBox, 16, Error,
     (
     Failed to download latest file.
-    Details saved to:
-    %errorLog%
+    See error.txt in script directory for details.
     )
     ExitApp
 }
