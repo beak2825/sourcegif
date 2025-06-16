@@ -56,6 +56,7 @@ global githubCommitAPI := "https://api.github.com/repos/" . UserRepoName . "/com
 global rawBaseURL := "https://raw.githubusercontent.com/" . UserRepoName
 
 ; get local file hash (SHA-1)
+; real note, if theres errors with the auto-updater, (shouldn't be I've tested it) it will automatically run the script without updating since if it didn't, that would result in a broken macro just because theres a new update.
 if !FileGetSHA1(localFile, currentSHA) {
     MsgBox, 16, Error, Failed to compute current file hash.
     Gosub, ShowGui
