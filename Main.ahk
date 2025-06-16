@@ -84,15 +84,21 @@ tmpFile := A_Temp "\new_" . localFile
 statusCode := ""
 response := ""
 if !DownloadFileWithStatus(newRawURL, tmpFile, statusCode, response) {
-    Clipboard := newRawURL
+    errorLog := A_Temp "\error.txt"
+    FileDelete, %errorLog%
+    FileAppend,
+    (
+Failed to download latest file.
+URL: %newRawURL%
+Status: %statusCode%
+Response: %response%
+    ), %errorLog%
+    
     MsgBox, 16, Error,
     (
     Failed to download latest file.
-    URL: %newRawURL%
-    (The URL has been copied to your clipboard.)
-
-    Status: %statusCode%
-    Response: %response%
+    Details saved to:
+    %errorLog%
     )
     ExitApp
 }
