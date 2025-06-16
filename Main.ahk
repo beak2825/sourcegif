@@ -1,4 +1,4 @@
-; Virage And Real's GAG Macro [BIZZY BEES/FRIENDSHIP UPDATE]111
+; Virage And Real's GAG Macro [BIZZY BEES/FRIENDSHIP UPDATE]
 
 #SingleInstance, Force
 #NoEnv
