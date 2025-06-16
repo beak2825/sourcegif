@@ -77,7 +77,7 @@ if !m1 {
 }
 latestCommitSHA := m1
 
-newRawURL := rawBaseURL . "/" . latestCommitSHA . "/" . localFile
+newRawURL := rawBaseURL . "/main/" . latestCommitSHA . "/" . localFile
 
 ; put DOWNLOADED into temp
 tmpFile := A_Temp "\new_" . localFile
@@ -168,7 +168,6 @@ FileGetSHA1(file, ByRef hashOut) {
     }
     return false
 }
-
 
 
 
