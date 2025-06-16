@@ -164,7 +164,7 @@ DownloadFileWithStatus(url, savePath, ByRef statusCode, ByRef responseText) {
         }
     } catch e {
         statusCode := "Exception"
-        responseText := e.Message
+        responseText := "Error code: " . e.What . "`nMessage: " . e.Message . "`nExtra: " . e.Extra
     }
     return false
 }
