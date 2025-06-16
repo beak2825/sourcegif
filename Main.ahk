@@ -55,49 +55,38 @@ global localFile := "Main.ahk"
 global githubCommitAPI := "https://api.github.com/repos/" . UserRepoName . "/commits?path=" . localFile
 global rawBaseURL := "https://raw.githubusercontent.com/" . UserRepoName
 
-; get current file hash
+; get local file hash (sha-1)
 if !FileGetSHA1(localFile, currentSHA) {
     MsgBox, 16, Error, Failed to compute current file hash.
     ExitApp
 }
 
-; try to get the latest commit hash
+; get github commits (no cache for api)
 json := httpGet(githubCommitAPI)
 if !json {
     MsgBox, 16, Error, Failed to query GitHub commit info.
     ExitApp
 }
 
-; parse latest SHA hash
-RegExMatch(json, """sha"":\s*""([0-9a-f]+)""", m)
+; Step 3: Extract latest commit SHA (commit hash)
+; Commit SHA is 40 hex chars
+RegExMatch(json, """sha"":\s*""([0-9a-f]{40})""", m)
 if !m1 {
     MsgBox, 16, Error, Could not extract commit SHA from API response.
     ExitApp
 }
-latestSHA := m1
+latestCommitSHA := m1
 
-; Show hashes and ask user if they want to download update
-msg := "Current SHA1 hash: " . currentSHA . "`nNew SHA1 hash: " . latestSHA
-msg .= "`n`nDownload new version?"
+newRawURL := rawBaseURL . "/" . latestCommitSHA . "/" . localFile
 
-MsgBox, 4,, %msg%
-IfMsgBox, No
-{
-    ; User cancelled, continue normal execution...
-    return
-}
-
-; User clicked Yes, attempt download
-newRawURL := rawBaseURL . "/" . latestSHA . "/" . localFile
-
-if DownloadFileWithStatus(newRawURL, localFile, statusCode, response) {
-    MsgBox, 64, Update, A new version was downloaded. The script will now restart to apply the update.
-    Run, %A_AhkPath% "%A_ScriptFullPath%"
-    ExitApp
-} else {
+; put DOWNLOADED into temp
+tmpFile := A_Temp "\new_" . localFile
+statusCode := ""
+response := ""
+if !DownloadFileWithStatus(newRawURL, tmpFile, statusCode, response) {
     MsgBox, 16, Error,
     (
-    Update failed.
+    Failed to download latest file.
     URL: %newRawURL%
     Status: %statusCode%
     Response: %response%
@@ -105,7 +94,34 @@ if DownloadFileWithStatus(newRawURL, localFile, statusCode, response) {
     ExitApp
 }
 
-; --- Functions ---
+; get DOWNLOADED file hash
+if !FileGetSHA1(tmpFile, newFileSHA) {
+    MsgBox, 16, Error, Failed to compute SHA1 of downloaded file.
+    FileDelete, %tmpFile%
+    ExitApp
+}
+
+; Show hashes to the user running and ask for update
+msg := "Current local file SHA1: " . currentSHA . "`nDownloaded file SHA1: " . newFileSHA
+msg .= "`n`nDownload new version and replace local file?"
+
+MsgBox, 4,, %msg%
+IfMsgBox, No
+{
+    FileDelete, %tmpFile%  ; Clean up temp file
+    ; User cancelled - continue normal execution
+    return
+}
+
+; replace local file, restart
+FileDelete, %localFile%
+FileMove, %tmpFile%, %localFile%, 1  ; Overwrite if exists
+
+MsgBox, 64, Update, A new version was downloaded. The script will now restart to apply the update.
+Run, %A_AhkPath% "%A_ScriptFullPath%"
+ExitApp
+
+
 
 httpGet(url) {
     http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -152,8 +168,6 @@ FileGetSHA1(file, ByRef hashOut) {
     }
     return false
 }
-
-
 
 
 
