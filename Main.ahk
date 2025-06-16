@@ -58,20 +58,20 @@ global rawBaseURL := "https://raw.githubusercontent.com/" . UserRepoName
 ; get local file hash (SHA-1)
 if !FileGetSHA1(localFile, currentSHA) {
     MsgBox, 16, Error, Failed to compute current file hash.
-    ExitApp
+    Gosub, ShowGui
 }
 
 ; get github commits from api (non-caching)
 json := httpGet(githubCommitAPI)
 if !json {
     MsgBox, 16, Error, Failed to query GitHub commit info.
-    ExitApp
+    Gosub, ShowGui
 }
 
 RegExMatch(json, """sha"":\s*""([0-9a-f]{40})""", m)
 if !m1 {
     MsgBox, 16, Error, Could not extract commit SHA from API response.
-    ExitApp
+    Gosub, ShowGui
 }
 latestCommitSHA := m1
 newRawURL := rawBaseURL . "/" . latestCommitSHA . "/" . localFile
@@ -83,20 +83,20 @@ response := ""
 
 if !DownloadFileWithStatus(newRawURL, tmpFile, statusCode, response) {
     MsgBox, 16, Error, Failed to download latest file. HTTP status: %statusCode%
-    ExitApp
+    Gosub, ShowGui
 }
 
 ; get DOWNLOADED file hash
 if !FileGetSHA1(tmpFile, newFileSHA) {
     MsgBox, 16, Error, Failed to compute SHA1 of downloaded file.
     FileDelete, %tmpFile%
-    ExitApp
+    Gosub, ShowGui
 }
 
 ; Compare hashes
 if (currentSHA = newFileSHA) {
     FileDelete, %tmpFile%
-    return  ; No update needed
+    Gosub, ShowGui ; no update needed
 }
 
 ; replace local file, restart ahk file
