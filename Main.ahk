@@ -50,11 +50,10 @@ global cosmeticAutoActive := 0
 
 global actionQueue := []
 
-global UserRepoName := "beak2825/sourcegif/"
+global UserRepoName := "beak2825/sourcegif"
 global localFile := "Main.ahk"
-global githubCommitAPI := "https://api.github.com/repos/" . UserRepoName . "commits?path=" . localFile
+global githubCommitAPI := "https://api.github.com/repos/" . UserRepoName . "/commits?path=" . localFile
 global rawBaseURL := "https://raw.githubusercontent.com/" . UserRepoName
-
 
 ; get current file hash
 if !FileGetSHA1(localFile, currentSHA) {
@@ -77,29 +76,36 @@ if !m1 {
 }
 latestSHA := m1
 
-; compare hash between current, and on server
-if (latestSHA != currentSHA) {
-    newRawURL := rawBaseURL . "/" . latestSHA . "/Main.ahk"
+; Show hashes and ask user if they want to download update
+msg := "Current SHA1 hash: " . currentSHA . "`nNew SHA1 hash: " . latestSHA
+msg .= "`n`nDownload new version?"
 
-    if DownloadFileWithStatus(newRawURL, localFile, statusCode, response) {
-        MsgBox, 64, Update, A new version was downloaded. The script will now restart to apply the update.
-        Run, %A_AhkPath% "%localFile%"
-        ExitApp
-    } else {
-        MsgBox, 16, Error,
-        (
-        Update failed.
-        URL: %newRawURL%
-        Status: %statusCode%
-        Response: %response%
-        )
-        ExitApp
-    }
-} else {
-    ; Up-to-date
-    ; Continue normal execution...
+MsgBox, 4,, %msg%
+IfMsgBox, No
+{
+    ; User cancelled, continue normal execution...
+    return
 }
 
+; User clicked Yes, attempt download
+newRawURL := rawBaseURL . "/" . latestSHA . "/" . localFile
+
+if DownloadFileWithStatus(newRawURL, localFile, statusCode, response) {
+    MsgBox, 64, Update, A new version was downloaded. The script will now restart to apply the update.
+    Run, %A_AhkPath% "%A_ScriptFullPath%"
+    ExitApp
+} else {
+    MsgBox, 16, Error,
+    (
+    Update failed.
+    URL: %newRawURL%
+    Status: %statusCode%
+    Response: %response%
+    )
+    ExitApp
+}
+
+; --- Functions ---
 
 httpGet(url) {
     http := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -134,7 +140,7 @@ DownloadFileWithStatus(url, savePath, ByRef statusCode, ByRef responseText) {
     }
     return false
 }
-; get current sha-1
+
 FileGetSHA1(file, ByRef hashOut) {
     temp := A_Temp "\hash_output.txt"
     RunWait, %ComSpec% /c certutil -hashfile "%file%" SHA1 > "%temp%", , Hide
