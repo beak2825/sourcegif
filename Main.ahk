@@ -84,10 +84,13 @@ tmpFile := A_Temp "\new_" . localFile
 statusCode := ""
 response := ""
 if !DownloadFileWithStatus(newRawURL, tmpFile, statusCode, response) {
+    Clipboard := newRawURL
     MsgBox, 16, Error,
     (
     Failed to download latest file.
     URL: %newRawURL%
+    (The URL has been copied to your clipboard.)
+
     Status: %statusCode%
     Response: %response%
     )
