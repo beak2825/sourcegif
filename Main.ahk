@@ -52,7 +52,7 @@ global actionQueue := []
 
 global UserRepoName := "beak2825/sourcegif/"
 global localFile := "Main.ahk"
-global githubCommitAPI := "https://api.github.com/repos/" . UserRepoName . "/commits?path=" . localFile
+global githubCommitAPI := "https://api.github.com/repos/" . UserRepoName . "commits?path=" . localFile
 global rawBaseURL := "https://raw.githubusercontent.com/" . UserRepoName
 
 
