@@ -1,1 +1,154 @@
-<img src="https://raw.githubusercontent.com/beak2825/sourcegif/refs/heads/main/steganographylock.gif"></img>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Scheduled Audio Player</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    padding-top: 80px;
+    background: #111;
+    color: #eee;
+  }
+  button {
+    padding: 10px 25px;
+    font-size: 18px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <h1>Scheduled Audio Player</h1>
+  <p>Press Start to activate sound schedule and live updates.</p>
+  <button id="startBtn">Start</button>
+
+<script>
+const soundBUrl = "https://raw.githubusercontent.com/beak2825/sourcegif/refs/heads/main/whistle.mp3";
+const soundCUrls = [
+  "https://raw.githubusercontent.com/beak2825/sourcegif/refs/heads/main/shorts.mp3",
+  "https://raw.githubusercontent.com/beak2825/sourcegif/refs/heads/main/longs.mp3"
+];
+const checkUrl = "https://script.google.com/macros/s/AKfycbztPWSn8sgRI5r6qlTYNwwS1BbNIlry9S898kXRxMVcXDqbjfAcjXklL4pVmXux77BqPg/exec";
+
+const schedule = [
+  { time: "01:31:50", sound: "B" },
+  { time: "08:55:50", sound: "B" },
+  { time: "10:19:00", sound: "B" },
+  { time: "10:41:50", sound: "B" },
+  { time: "12:50:00", sound: "B" },
+  { time: "13:25:00", sound: "B" },
+  { time: "14:05:50", sound: "C" },
+  { time: "14:20:00", sound: "C" },
+  { time: "14:30:00", sound: "C" },
+  { time: "14:37:55", sound: "C" }
+];
+
+// ---------------- Utility Functions ----------------
+function base64ToAudio(base64) {
+  const audio = new Audio();
+  audio.src = base64;
+  return audio;
+}
+
+async function preloadAudio(url, key) {
+  if (localStorage.getItem(key)) return;
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const reader = new FileReader();
+  reader.onloadend = () => localStorage.setItem(key, reader.result);
+  reader.readAsDataURL(blob);
+}
+
+function getCachedAudio(key) {
+  const data = localStorage.getItem(key);
+  return data ? base64ToAudio(data) : null;
+}
+
+// ---------------- Core Logic ----------------
+function startSchedule() {
+  const soundB = getCachedAudio("soundB");
+  const soundC1 = getCachedAudio("soundC1");
+  const soundC2 = getCachedAudio("soundC2");
+
+  if (!soundB || !soundC1 || !soundC2) {
+    alert("Audio not ready yet. Please wait and retry.");
+    return;
+  }
+
+  // --- Scheduled time checks ---
+  setInterval(() => {
+    const now = new Date();
+    const current = now.toTimeString().split(" ")[0].slice(0, 8);
+    const event = schedule.find(s => s.time === current);
+    if (event) {
+      if (event.sound === "B") {
+        soundB.currentTime = 0;
+        soundB.play();
+      } else {
+        const soundChoice = Math.random() < 0.5 ? soundC1 : soundC2;
+        soundChoice.currentTime = 0;
+        soundChoice.play();
+      }
+    }
+  }, 1000);
+
+  // --- Fetch remote trigger every 1 minute ---
+  const seen = new Set(JSON.parse(localStorage.getItem("seenTimes") || "[]"));
+
+  async function checkRemote() {
+    try {
+      const res = await fetch("https://script.google.com/macros/s/AKfycbztPWSn8sgRI5r6qlTYNwwS1BbNIlry9S898kXRxMVcXDqbjfAcjXklL4pVmXux77BqPg/exec");
+      const text = (await res.text()).trim();
+      if (!text || text === "none") return;
+
+      const [codeLine, dateLine] = text.split("\n");
+      const code = codeLine.trim();
+      const date = dateLine ? dateLine.trim() : "";
+
+      // skip if timestamp already processed
+      if (seen.has(date)) return;
+
+      seen.add(date);
+      localStorage.setItem("seenTimes", JSON.stringify([...seen]));
+
+      // play based on response
+      if (code === "B") {
+        soundB.currentTime = 0;
+        soundB.play();
+      } else if (code === "shorts") {
+        soundC1.currentTime = 0;
+        soundC1.play();
+      } else if (code === "longs") {
+        soundC2.currentTime = 0;
+        soundC2.play();
+      }
+    } catch (e) {
+      console.error("Remote check failed:", e);
+    }
+  }
+
+  // First check immediately, then every 1 minute
+  checkRemote();
+  setInterval(checkRemote, 60 * 1000);
+}
+
+// ---------------- Startup ----------------
+document.getElementById("startBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("startBtn");
+  btn.disabled = true;
+  btn.textContent = "Loading Audio...";
+
+  await Promise.all([
+    preloadAudio(soundBUrl, "soundB"),
+    preloadAudio(soundCUrls[0], "soundC1"),
+    preloadAudio(soundCUrls[1], "soundC2")
+  ]);
+
+  btn.textContent = "Running...";
+  startSchedule();
+});
+</script>
+</body>
+</html>
